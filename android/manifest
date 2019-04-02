@@ -1,0 +1,18 @@
+#
+# this is your module manifest and used by Titanium
+# during compilation, packaging, distribution, etc.
+#
+version: 1.0.1
+apiversion: 4
+architectures: arm64-v8a armeabi-v7a x86
+description: audioselector
+author: Rainer
+license: Specify your license
+copyright: Copyright (c) 2019 by Your Company
+
+# these should not be edited
+name: audioselector
+moduleid: de.appwerft.audioselector
+guid: f82442de-4ab1-4836-bcaa-aca3b6aac7d8
+platform: android
+minsdk: 7.1.0.GA
