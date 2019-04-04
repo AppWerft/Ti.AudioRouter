@@ -101,7 +101,7 @@ Local<FunctionTemplate> AudioselectorModule::getProxyTemplate(v8::Isolate* isola
 	titanium::SetProtoMethod(isolate, t, "getRingerMode", AudioselectorModule::getRingerMode);
 	titanium::SetProtoMethod(isolate, t, "getActivePlaybackConfigurations", AudioselectorModule::getActivePlaybackConfigurations);
 	titanium::SetProtoMethod(isolate, t, "setActiveAudioDevice", AudioselectorModule::setActiveAudioDevice);
-	titanium::SetProtoMethod(isolate, t, "getBoundedDevices", AudioselectorModule::getBoundedDevices);
+	titanium::SetProtoMethod(isolate, t, "isMusicActive", AudioselectorModule::isMusicActive);
 	titanium::SetProtoMethod(isolate, t, "isBluetoothA2dpOn", AudioselectorModule::isBluetoothA2dpOn);
 	titanium::SetProtoMethod(isolate, t, "isSpeakerphoneOn", AudioselectorModule::isSpeakerphoneOn);
 	titanium::SetProtoMethod(isolate, t, "isBluetoothScoOn", AudioselectorModule::isBluetoothScoOn);
@@ -672,9 +672,9 @@ void AudioselectorModule::setActiveAudioDevice(const FunctionCallbackInfo<Value>
 	args.GetReturnValue().Set(v8::Undefined(isolate));
 
 }
-void AudioselectorModule::getBoundedDevices(const FunctionCallbackInfo<Value>& args)
+void AudioselectorModule::isMusicActive(const FunctionCallbackInfo<Value>& args)
 {
-	LOGD(TAG, "getBoundedDevices()");
+	LOGD(TAG, "isMusicActive()");
 	Isolate* isolate = args.GetIsolate();
 	Local<Context> context = isolate->GetCurrentContext();
 	HandleScope scope(isolate);
@@ -686,9 +686,9 @@ void AudioselectorModule::getBoundedDevices(const FunctionCallbackInfo<Value>& a
 	}
 	static jmethodID methodID = NULL;
 	if (!methodID) {
-		methodID = env->GetMethodID(AudioselectorModule::javaClass, "getBoundedDevices", "()[Ljava/lang/Object;");
+		methodID = env->GetMethodID(AudioselectorModule::javaClass, "isMusicActive", "()Z");
 		if (!methodID) {
-			const char *error = "Couldn't find proxy method 'getBoundedDevices' with signature '()[Ljava/lang/Object;'";
+			const char *error = "Couldn't find proxy method 'isMusicActive' with signature '()Z'";
 			LOGE(TAG, error);
 				titanium::JSException::Error(isolate, error);
 				return;
@@ -718,7 +718,7 @@ void AudioselectorModule::getBoundedDevices(const FunctionCallbackInfo<Value>& a
 		args.GetReturnValue().Set(v8::Undefined(isolate));
 		return;
 	}
-	jobjectArray jResult = (jobjectArray)env->CallObjectMethodA(javaProxy, methodID, jArguments);
+	jboolean jResult = (jboolean)env->CallBooleanMethodA(javaProxy, methodID, jArguments);
 
 
 
@@ -732,14 +732,9 @@ void AudioselectorModule::getBoundedDevices(const FunctionCallbackInfo<Value>& a
 		return;
 	}
 
-	if (jResult == NULL) {
-		args.GetReturnValue().Set(Null(isolate));
-		return;
-	}
 
-	Local<Array> v8Result = titanium::TypeConverter::javaArrayToJsArray(isolate, env, jResult);
+	Local<Boolean> v8Result = titanium::TypeConverter::javaBooleanToJsBoolean(isolate, env, jResult);
 
-	env->DeleteLocalRef(jResult);
 
 
 	args.GetReturnValue().Set(v8Result);

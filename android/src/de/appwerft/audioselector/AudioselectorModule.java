@@ -136,33 +136,16 @@ public class AudioselectorModule extends KrollModule {
 
 	// Methods
 	@Kroll.method
-	public void setRingerMode(int tone) {
+	public static void setRingerMode(int tone) {
 		audioManager.setRingerMode(tone);
 	}
 	@Kroll.method
-	public int getRingerMode() {
+	public static int getRingerMode() {
 		return audioManager.getRingerMode();
 	}
+	
 	@Kroll.method
-	public Object[] getBoundedDevices() {
-		ArrayList<HashMap> resList = new ArrayList<HashMap>();
-		Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
-		if (pairedDevices.size() > 0) {
-			// There are paired devices. Get the name and address of each paired device.
-			for (BluetoothDevice device : pairedDevices) {
-				KrollDict dict = new KrollDict();
-				dict.put("devicename", device.getName());
-				dict.put("address", device.getAddress()); // MAC address
-				dict.put("type", device.getType());
-				dict.put("type", device.getType());
-				resList.add(dict);
-			}
-		}
-		return resList.toArray();
-	}
-
-	@Kroll.method
-	public Object[] getDevices() {
+	public static Object[] getDevices() {
 		@SuppressWarnings("rawtypes")
 		ArrayList<HashMap> deviceList = new ArrayList<HashMap>();
 		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M)
@@ -188,7 +171,7 @@ public class AudioselectorModule extends KrollModule {
 	}
 
 	@Kroll.method
-	public Object[] getActivePlaybackConfigurations() {
+	public static Object[] getActivePlaybackConfigurations() {
 		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O)
 			return null;
 		ArrayList<HashMap> configurationList = new ArrayList<HashMap>();
@@ -212,22 +195,27 @@ public class AudioselectorModule extends KrollModule {
 	}
 
 	@Kroll.method
-	public boolean isSpeakerphoneOn() {
+	public static boolean isSpeakerphoneOn() {
 		return audioManager.isSpeakerphoneOn();
+	}
+	
+	@Kroll.method
+	public static boolean isMusicActive() {
+		return audioManager.isMusicActive();
 	}
 
 	@Kroll.method
-	public boolean isBluetoothScoOn() {
+	public static boolean isBluetoothScoOn() {
 		return audioManager.isBluetoothScoOn();
 	}
 
 	@Kroll.method
-	public boolean isBluetoothA2dpOn() {
+	public static boolean isBluetoothA2dpOn() {
 		return audioManager.isBluetoothA2dpOn();
 	}
 
 	@Kroll.method
-	public boolean isWiredHeadsetOn() {
+	public static boolean isWiredHeadsetOn() {
 		return audioManager.isWiredHeadsetOn();
 	}
 
