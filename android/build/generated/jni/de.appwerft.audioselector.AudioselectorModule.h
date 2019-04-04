@@ -39,7 +39,10 @@ private:
 	static void isSpeakerphoneOn(const v8::FunctionCallbackInfo<v8::Value>&);
 	static void isWiredHeadsetOn(const v8::FunctionCallbackInfo<v8::Value>&);
 	static void setRingerMode(const v8::FunctionCallbackInfo<v8::Value>&);
+	static void registerReceiver(const v8::FunctionCallbackInfo<v8::Value>&);
+	static void stopBecomingNoisyReceiver(const v8::FunctionCallbackInfo<v8::Value>&);
 	static void getRingerMode(const v8::FunctionCallbackInfo<v8::Value>&);
+	static void unregisterReceiver(const v8::FunctionCallbackInfo<v8::Value>&);
 	static void isMusicActive(const v8::FunctionCallbackInfo<v8::Value>&);
 	static void isBluetoothA2dpOn(const v8::FunctionCallbackInfo<v8::Value>&);
 	static void isBluetoothScoOn(const v8::FunctionCallbackInfo<v8::Value>&);

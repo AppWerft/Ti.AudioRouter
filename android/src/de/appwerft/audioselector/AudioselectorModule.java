@@ -378,41 +378,33 @@ public class AudioselectorModule extends KrollModule {
 				}
 			}
 		}
+	}
 
-		private IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
-		BecomingNoisyReceiver becomingNoisyReceiver = new BecomingNoisyReceiver();
+	BecomingNoisyReceiver becomingNoisyReceiver = new BecomingNoisyReceiver();
 
-		private KrollFunction becomingNoisyCallback;
+	private KrollFunction becomingNoisyCallback;
 
-		@Kroll.method
-		public void startBecomingNoisyReceiver(Object cb) {
+	@Kroll.method
+	public void registerReceiver(String receiver, Object cb) {
+		if (receiver.equals("becomingnoisy")) {
 			if (cb instanceof KrollFunction) {
 				becomingNoisyCallback = (KrollFunction) cb;
 			}
-			ctx.registerReceiver(becomingNoisyReceiver, intentFilter);
+			ctx.registerReceiver(becomingNoisyReceiver, 
+					new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
 		}
+	}
 
-		@Kroll.method
-		public void registerReceiver(String receiver, Object cb) {
-			if (receiver.equals("becomingnoisy")) {
-				if (cb instanceof KrollFunction) {
-					becomingNoisyCallback = (KrollFunction) cb;
-				}
-				ctx.registerReceiver(becomingNoisyReceiver, intentFilter);
-			}
-		}
-		@Kroll.method
-		public void unregisterReceiver(String receiver, @Kroll.argument(optional=true) Object cb) {
-			if (receiver.equals("becomingnoisy")) {
-				ctx.unregisterReceiver(becomingNoisyReceiver);
-			}
-		}
-
-		@Kroll.method
-		public void stopBecomingNoisyReceiver() {
+	@Kroll.method
+	public void unregisterReceiver(String receiver, @Kroll.argument(optional = true) Object cb) {
+		if (receiver.equals("becomingnoisy")) {
 			ctx.unregisterReceiver(becomingNoisyReceiver);
-
 		}
+	}
+
+	@Kroll.method
+	public void stopBecomingNoisyReceiver() {
+		ctx.unregisterReceiver(becomingNoisyReceiver);
 
 	}
 
