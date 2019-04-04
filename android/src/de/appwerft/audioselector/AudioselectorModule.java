@@ -365,6 +365,8 @@ public class AudioselectorModule extends KrollModule {
 	BecomingNoisyReceiver becomingNoisyReceiver = new BecomingNoisyReceiver();
 	
 	private KrollFunction becomingNoisyCallback;
+	
+	
 	@Kroll.method
 	public void startBecomingNoisyReceiver(Object cb) {
 		if (cb instanceof KrollFunction) {
