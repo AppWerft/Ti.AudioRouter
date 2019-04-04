@@ -130,6 +130,7 @@ public class AudioselectorModule extends KrollModule {
 		Log.d(LCAT, "inside onAppCreate");
 		ctx = app.getApplicationContext();
 		audioManager = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
+		audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
 
 		// put module init code that needs to run when the application is created
 	}
