@@ -15,7 +15,7 @@ import java.util.Set;
 
 import org.appcelerator.kroll.KrollModule;
 import org.appcelerator.kroll.KrollDict;
-
+import org.appcelerator.kroll.KrollFunction;
 import org.appcelerator.kroll.annotations.Kroll;
 
 import org.appcelerator.titanium.TiApplication;
@@ -156,11 +156,11 @@ public class AudioselectorModule extends KrollModule {
 		AudioDeviceInfo[] infos = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
 		for (AudioDeviceInfo info : infos) {
 			HashMap<String, Object> opt = new HashMap<String, Object>();
-			opt.put("channelcounts", info.getChannelCounts());
 			opt.put("id", info.getId());
-			// info.getAddress();
-			opt.put("productname", info.getProductName());
 			opt.put("type", info.getType());
+			opt.put("channelcounts", info.getChannelCounts());
+			opt.put("productname", info.getProductName());
+
 			opt.put("samplerates", info.getSampleRates());
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
 				opt.put("address", info.getAddress());
@@ -306,31 +306,13 @@ public class AudioselectorModule extends KrollModule {
 	}
 
 	private BluetoothProfile.ServiceListener headsetListener = new BluetoothProfile.ServiceListener() {
-		public void onServiceConnected(int profile, BluetoothProfile proxy) {
-			if (profile == BluetoothProfile.HEADSET) {
-				bluetoothHeadset = (BluetoothHeadset) proxy;
-			}
-		}
+		public void onServiceConnected(int profile,BluetoothProfile proxy){if(profile==BluetoothProfile.HEADSET){bluetoothHeadset=(BluetoothHeadset)proxy;}}
 
-		public void onServiceDisconnected(int profile) {
-			if (profile == BluetoothProfile.HEADSET) {
-				bluetoothHeadset = null;
-			}
-		}
-	};
+	public void onServiceDisconnected(int profile){if(profile==BluetoothProfile.HEADSET){bluetoothHeadset=null;}}};
 	private BluetoothProfile.ServiceListener a2dpListener = new BluetoothProfile.ServiceListener() {
-		public void onServiceConnected(int profile, BluetoothProfile proxy) {
-			if (profile == BluetoothProfile.A2DP) {
-				bluetoothA2dp = (BluetoothA2dp) proxy;
-			}
-		}
+		public void onServiceConnected(int profile,BluetoothProfile proxy){if(profile==BluetoothProfile.A2DP){bluetoothA2dp=(BluetoothA2dp)proxy;}}
 
-		public void onServiceDisconnected(int profile) {
-			if (profile == BluetoothProfile.A2DP) {
-				bluetoothA2dp = null;
-			}
-		}
-	};
+	public void onServiceDisconnected(int profile){if(profile==BluetoothProfile.A2DP){bluetoothA2dp=null;}}};
 
 	public void BTinit() {
 		// Establish connection to the proxy.
@@ -369,16 +351,35 @@ public class AudioselectorModule extends KrollModule {
 
 	}
 
-	private class NoisyAudioStreamReceiver extends BroadcastReceiver {
+	private class BecomingNoisyReceiver extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
-				// Pause the playback
-			}
+				if (becomingNoisyCallback!= null) {
+					becomingNoisyCallback.call(getKrollObject(), getDevices());
+				}
 		}
 	}
 
 	private IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
-	NoisyAudioStreamReceiver noisyAudioStreamReceiver = new NoisyAudioStreamReceiver();
+	BecomingNoisyReceiver becomingNoisyReceiver = new BecomingNoisyReceiver();
+	
+	private KrollFunction becomingNoisyCallback;
+	@Kroll.method
+	public void startBecomingNoisyReceiver(Object cb) {
+		if (cb instanceof KrollFunction) {
+			becomingNoisyCallback = (KrollFunction)cb;
+		}
+		ctx.registerReceiver(becomingNoisyReceiver, intentFilter);
 
+		
+	}
+	@Kroll.method
+	public void stopBecomingNoisyReceiver() {
+		ctx.unregisterReceiver(becomingNoisyReceiver);		
+		
+	}
+	
+	
+	
 }
