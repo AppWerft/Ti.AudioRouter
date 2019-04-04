@@ -26,8 +26,10 @@ import android.bluetooth.BluetoothHeadset;
 import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothDevice;
-
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.media.AudioAttributes;
 import android.media.AudioDeviceInfo;
 import android.media.AudioFormat;
@@ -46,7 +48,6 @@ public class AudioselectorModule extends KrollModule {
 	// Standard Debugging variables
 	private static final String LCAT = "AudioselectorModule";
 	private static final boolean DBG = TiConfig.LOGD;
-	
 
 	@Kroll.constant
 	public static final int TYPE_AUX_LINE = AudioDeviceInfo.TYPE_AUX_LINE;
@@ -140,13 +141,14 @@ public class AudioselectorModule extends KrollModule {
 	public static void setRingerMode(int tone) {
 		audioManager.setRingerMode(tone);
 	}
+
 	@Kroll.method
-	public  int getRingerMode() {
+	public int getRingerMode() {
 		return audioManager.getRingerMode();
 	}
-	
+
 	@Kroll.method
-	public  Object[] getDevices() {
+	public Object[] getDevices() {
 		@SuppressWarnings("rawtypes")
 		ArrayList<HashMap> deviceList = new ArrayList<HashMap>();
 		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M)
@@ -172,7 +174,7 @@ public class AudioselectorModule extends KrollModule {
 	}
 
 	@Kroll.method
-	public  Object[] getActivePlaybackConfigurations() {
+	public Object[] getActivePlaybackConfigurations() {
 		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O)
 			return null;
 		ArrayList<HashMap> configurationList = new ArrayList<HashMap>();
@@ -196,33 +198,44 @@ public class AudioselectorModule extends KrollModule {
 	}
 
 	@Kroll.method
-	public  boolean isSpeakerphoneOn() {
+	public boolean isSpeakerphoneOn() {
 		return audioManager.isSpeakerphoneOn();
 	}
-	
+
 	@Kroll.method
-	public  boolean isMusicActive() {
+	public boolean isMusicActive() {
 		return audioManager.isMusicActive();
 	}
 
 	@Kroll.method
-	public  boolean isBluetoothScoOn() {
+	public boolean isBluetoothScoOn() {
 		return audioManager.isBluetoothScoOn();
 	}
 
 	@Kroll.method
-	public  boolean isBluetoothA2dpOn() {
+	public boolean isTypeOn(int type) {
+		if (type == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER && isSpeakerphoneOn())
+			return true;
+		if (type == AudioDeviceInfo.TYPE_WIRED_HEADSET && isWiredHeadsetOn())
+			return true;
+		if (type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP && isBluetoothA2dpOn())
+			return true;
+		return false;
+	}
+
+	@Kroll.method
+	public boolean isBluetoothA2dpOn() {
 		return audioManager.isBluetoothA2dpOn();
 	}
 
 	@Kroll.method
-	public  boolean isWiredHeadsetOn() {
+	public boolean isWiredHeadsetOn() {
 		return isHeadsetOn();
 	}
 
 	// https://stackoverflow.com/questions/47057889/how-to-switch-audio-output-from-phone-phone-speaker-earphones-or-bluetooth-dev
 	@SuppressWarnings("deprecation")
-	private  void reset(AudioManager audioManager) {
+	private void reset(AudioManager audioManager) {
 		if (audioManager != null) {
 			audioManager.setMode(AudioManager.MODE_NORMAL);
 			audioManager.stopBluetoothSco();
@@ -232,22 +245,22 @@ public class AudioselectorModule extends KrollModule {
 		}
 	}
 
-	public  void connectEarpiece(AudioManager audioManager) {
+	public void connectEarpiece(AudioManager audioManager) {
 		reset(audioManager);
 		audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
 	}
 
-	public  void connectSpeaker(AudioManager audioManager) {
+	public void connectSpeaker(AudioManager audioManager) {
 		reset(audioManager);
 		audioManager.setSpeakerphoneOn(true);
 	}
 
-	public  void connectHeadphones(AudioManager audioManager) {
+	public void connectHeadphones(AudioManager audioManager) {
 		reset(audioManager);
 		audioManager.setWiredHeadsetOn(true);
 	}
 
-	public  void connectBluetoothA2DP(AudioManager audioManager) {
+	public void connectBluetoothA2DP(AudioManager audioManager) {
 		reset(audioManager);
 		audioManager.setBluetoothA2dpOn(true);
 	}
@@ -326,28 +339,47 @@ public class AudioselectorModule extends KrollModule {
 		bluetoothAdapter.closeProfileProxy(BluetoothProfile.A2DP, bluetoothA2dp);
 
 	}
-	private  boolean isHeadsetOn() {
-	    AudioManager am = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
 
-	    if (am == null)
-	        return false;
+	private boolean isHeadsetOn() {
+		AudioManager am = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
 
-	    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-	        return am.isWiredHeadsetOn() || am.isBluetoothScoOn() || am.isBluetoothA2dpOn();
-	    } else {
-	        AudioDeviceInfo[] devices = am.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
+		if (am == null)
+			return false;
 
-	        for (int i = 0; i < devices.length; i++) {
-	            AudioDeviceInfo device = devices[i];
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+			return am.isWiredHeadsetOn() || am.isBluetoothScoOn() || am.isBluetoothA2dpOn();
+		} else {
+			AudioDeviceInfo[] devices = am.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
 
-	            if (device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADSET
-	                    || device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADPHONES
-	                    ) {
-	                return true;
-	            }
-	        }
-	    }
-	    return false;
+			for (int i = 0; i < devices.length; i++) {
+				AudioDeviceInfo device = devices[i];
 
+				if (device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADSET
+						|| device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADPHONES) {
+					return true;
+				}
+			}
+		}
+		return false;
+
+	}
+
+	private class NoisyAudioStreamReceiver extends BroadcastReceiver {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
+				// Pause the playback
+			}
+		}
+	}
+
+	private IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+
+	private void startPlayback() {
+		registerReceiver(myNoisyAudioStreamReceiver(), intentFilter);
+	}
+
+	private void stopPlayback() {
+		unregisterReceiver(myNoisyAudioStreamReceiver);
 	}
 }
