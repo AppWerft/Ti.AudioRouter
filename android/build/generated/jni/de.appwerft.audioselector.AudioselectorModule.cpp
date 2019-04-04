@@ -98,6 +98,7 @@ Local<FunctionTemplate> AudioselectorModule::getProxyTemplate(v8::Isolate* isola
 	titanium::SetProtoMethod(isolate, t, "setRingerMode", AudioselectorModule::setRingerMode);
 	titanium::SetProtoMethod(isolate, t, "getDevices", AudioselectorModule::getDevices);
 	titanium::SetProtoMethod(isolate, t, "getActiveAudioDevice", AudioselectorModule::getActiveAudioDevice);
+	titanium::SetProtoMethod(isolate, t, "getRingerMode", AudioselectorModule::getRingerMode);
 	titanium::SetProtoMethod(isolate, t, "getActivePlaybackConfigurations", AudioselectorModule::getActivePlaybackConfigurations);
 	titanium::SetProtoMethod(isolate, t, "setActiveAudioDevice", AudioselectorModule::setActiveAudioDevice);
 	titanium::SetProtoMethod(isolate, t, "getBoundedDevices", AudioselectorModule::getBoundedDevices);
@@ -383,6 +384,74 @@ void AudioselectorModule::getActiveAudioDevice(const FunctionCallbackInfo<Value>
 		methodID = env->GetMethodID(AudioselectorModule::javaClass, "getActiveAudioDevice", "()I");
 		if (!methodID) {
 			const char *error = "Couldn't find proxy method 'getActiveAudioDevice' with signature '()I'";
+			LOGE(TAG, error);
+				titanium::JSException::Error(isolate, error);
+				return;
+		}
+	}
+
+	Local<Object> holder = args.Holder();
+	if (!JavaObject::isJavaObject(holder)) {
+		holder = holder->FindInstanceInPrototypeChain(getProxyTemplate(isolate));
+	}
+	if (holder.IsEmpty() || holder->IsNull()) {
+		LOGE(TAG, "Couldn't obtain argument holder");
+		args.GetReturnValue().Set(v8::Undefined(isolate));
+		return;
+	}
+	titanium::Proxy* proxy = NativeObject::Unwrap<titanium::Proxy>(holder);
+	if (!proxy) {
+		args.GetReturnValue().Set(Undefined(isolate));
+		return;
+	}
+
+	jvalue* jArguments = 0;
+
+
+	jobject javaProxy = proxy->getJavaObject();
+	if (javaProxy == NULL) {
+		args.GetReturnValue().Set(v8::Undefined(isolate));
+		return;
+	}
+	jint jResult = (jint)env->CallIntMethodA(javaProxy, methodID, jArguments);
+
+
+
+	proxy->unreferenceJavaObject(javaProxy);
+
+
+
+	if (env->ExceptionCheck()) {
+		Local<Value> jsException = titanium::JSException::fromJavaException(isolate);
+		env->ExceptionClear();
+		return;
+	}
+
+
+	Local<Number> v8Result = titanium::TypeConverter::javaIntToJsNumber(isolate, env, jResult);
+
+
+
+	args.GetReturnValue().Set(v8Result);
+
+}
+void AudioselectorModule::getRingerMode(const FunctionCallbackInfo<Value>& args)
+{
+	LOGD(TAG, "getRingerMode()");
+	Isolate* isolate = args.GetIsolate();
+	Local<Context> context = isolate->GetCurrentContext();
+	HandleScope scope(isolate);
+
+	JNIEnv *env = titanium::JNIScope::getEnv();
+	if (!env) {
+		titanium::JSException::GetJNIEnvironmentError(isolate);
+		return;
+	}
+	static jmethodID methodID = NULL;
+	if (!methodID) {
+		methodID = env->GetMethodID(AudioselectorModule::javaClass, "getRingerMode", "()I");
+		if (!methodID) {
+			const char *error = "Couldn't find proxy method 'getRingerMode' with signature '()I'";
 			LOGE(TAG, error);
 				titanium::JSException::Error(isolate, error);
 				return;

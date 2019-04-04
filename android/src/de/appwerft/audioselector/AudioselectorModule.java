@@ -139,7 +139,10 @@ public class AudioselectorModule extends KrollModule {
 	public void setRingerMode(int tone) {
 		audioManager.setRingerMode(tone);
 	}
-
+	@Kroll.method
+	public int getRingerMode() {
+		return audioManager.getRingerMode();
+	}
 	@Kroll.method
 	public Object[] getBoundedDevices() {
 		ArrayList<HashMap> resList = new ArrayList<HashMap>();
