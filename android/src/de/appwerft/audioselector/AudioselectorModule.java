@@ -374,12 +374,6 @@ public class AudioselectorModule extends KrollModule {
 	}
 
 	private IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
-
-	private void startPlayback() {
-		registerReceiver(myNoisyAudioStreamReceiver(), intentFilter);
-	}
-
-	private void stopPlayback() {
-		unregisterReceiver(myNoisyAudioStreamReceiver);
-	}
+	NoisyAudioStreamReceiver noisyAudioStreamReceiver = new NoisyAudioStreamReceiver();
+	
 }
