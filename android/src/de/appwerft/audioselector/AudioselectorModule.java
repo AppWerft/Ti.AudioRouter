@@ -141,12 +141,12 @@ public class AudioselectorModule extends KrollModule {
 		audioManager.setRingerMode(tone);
 	}
 	@Kroll.method
-	public static int getRingerMode() {
+	public  int getRingerMode() {
 		return audioManager.getRingerMode();
 	}
 	
 	@Kroll.method
-	public static Object[] getDevices() {
+	public  Object[] getDevices() {
 		@SuppressWarnings("rawtypes")
 		ArrayList<HashMap> deviceList = new ArrayList<HashMap>();
 		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M)
@@ -172,7 +172,7 @@ public class AudioselectorModule extends KrollModule {
 	}
 
 	@Kroll.method
-	public static Object[] getActivePlaybackConfigurations() {
+	public  Object[] getActivePlaybackConfigurations() {
 		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O)
 			return null;
 		ArrayList<HashMap> configurationList = new ArrayList<HashMap>();
@@ -196,33 +196,33 @@ public class AudioselectorModule extends KrollModule {
 	}
 
 	@Kroll.method
-	public static boolean isSpeakerphoneOn() {
+	public  boolean isSpeakerphoneOn() {
 		return audioManager.isSpeakerphoneOn();
 	}
 	
 	@Kroll.method
-	public static boolean isMusicActive() {
+	public  boolean isMusicActive() {
 		return audioManager.isMusicActive();
 	}
 
 	@Kroll.method
-	public static boolean isBluetoothScoOn() {
+	public  boolean isBluetoothScoOn() {
 		return audioManager.isBluetoothScoOn();
 	}
 
 	@Kroll.method
-	public static boolean isBluetoothA2dpOn() {
+	public  boolean isBluetoothA2dpOn() {
 		return audioManager.isBluetoothA2dpOn();
 	}
 
 	@Kroll.method
-	public static boolean isWiredHeadsetOn() {
+	public  boolean isWiredHeadsetOn() {
 		return isHeadsetOn();
 	}
 
 	// https://stackoverflow.com/questions/47057889/how-to-switch-audio-output-from-phone-phone-speaker-earphones-or-bluetooth-dev
 	@SuppressWarnings("deprecation")
-	private static void reset(AudioManager audioManager) {
+	private  void reset(AudioManager audioManager) {
 		if (audioManager != null) {
 			audioManager.setMode(AudioManager.MODE_NORMAL);
 			audioManager.stopBluetoothSco();
@@ -232,22 +232,22 @@ public class AudioselectorModule extends KrollModule {
 		}
 	}
 
-	public static void connectEarpiece(AudioManager audioManager) {
+	public  void connectEarpiece(AudioManager audioManager) {
 		reset(audioManager);
 		audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
 	}
 
-	public static void connectSpeaker(AudioManager audioManager) {
+	public  void connectSpeaker(AudioManager audioManager) {
 		reset(audioManager);
 		audioManager.setSpeakerphoneOn(true);
 	}
 
-	public static void connectHeadphones(AudioManager audioManager) {
+	public  void connectHeadphones(AudioManager audioManager) {
 		reset(audioManager);
 		audioManager.setWiredHeadsetOn(true);
 	}
 
-	public static void connectBluetoothA2DP(AudioManager audioManager) {
+	public  void connectBluetoothA2DP(AudioManager audioManager) {
 		reset(audioManager);
 		audioManager.setBluetoothA2dpOn(true);
 	}
@@ -326,7 +326,7 @@ public class AudioselectorModule extends KrollModule {
 		bluetoothAdapter.closeProfileProxy(BluetoothProfile.A2DP, bluetoothA2dp);
 
 	}
-	private static boolean isHeadsetOn() {
+	private  boolean isHeadsetOn() {
 	    AudioManager am = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
 
 	    if (am == null)
