@@ -160,7 +160,6 @@ public class AudioselectorModule extends KrollModule {
 			opt.put("type", info.getType());
 			opt.put("channelcounts", info.getChannelCounts());
 			opt.put("productname", info.getProductName());
-
 			opt.put("samplerates", info.getSampleRates());
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
 				opt.put("address", info.getAddress());
@@ -227,6 +226,10 @@ public class AudioselectorModule extends KrollModule {
 	public void setTypeOn(int type) {
 		setActiveAudioDevice(type);
 	}
+	@Kroll.method
+	public void enable(int type) {
+		setActiveAudioDevice(type);
+	}
 
 	@Kroll.method
 	public boolean isBluetoothA2dpOn() {
@@ -246,21 +249,27 @@ public class AudioselectorModule extends KrollModule {
 			audioManager.stopBluetoothSco();
 			audioManager.setBluetoothScoOn(false);
 			audioManager.setSpeakerphoneOn(false);
+			audioManager.setBluetoothA2dpOn(false);
+			audioManager.setSpeakerphoneOn(false);
 			audioManager.setWiredHeadsetOn(false);
-		}
+		} else Log.w(LCAT, "audioManager is null");
 	}
 
-	public void connectEarpiece(AudioManager audioManager) {
+	public void connectEarpiece() {
 		reset(audioManager);
 		audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
 	}
 
-	public void connectSpeaker(AudioManager audioManager) {
+	public void connectSpeaker() {
 		reset(audioManager);
 		audioManager.setSpeakerphoneOn(true);
 	}
 
-	public void connectHeadphones(AudioManager audioManager) {
+	public void connectHeadphones() {
+		reset(audioManager);
+		audioManager.setWiredHeadsetOn(true);
+	}
+	public void connectHeadset() {
 		reset(audioManager);
 		audioManager.setWiredHeadsetOn(true);
 	}
@@ -293,13 +302,14 @@ public class AudioselectorModule extends KrollModule {
 	public void setActiveAudioDevice(int type) {
 		switch (type) {
 		case AudioDeviceInfo.TYPE_BLUETOOTH_A2DP:
-			connectBluetoothA2DP(audioManager);
+			connectBluetoothA2DP();
 			break;
 		case AudioDeviceInfo.TYPE_BUILTIN_SPEAKER:
-			connectSpeaker(audioManager);
+			connectSpeaker();
 			break;
 		case AudioDeviceInfo.TYPE_WIRED_HEADSET:
-			connectHeadphones(audioManager);
+		case AudioDeviceInfo.TYPE_WIRED_HEADPHONES:	
+			connectHeadphones();
 			break;
 		}
 

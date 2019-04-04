@@ -1,5 +1,4 @@
 "/Users/fuerst/Documents/APPC_WORKSPACE/AUDIO/Ti.AudioSelector/android/src/de/appwerft/audioselector/AudioselectorModule.java"
-"/Users/fuerst/Documents/APPC_WORKSPACE/AUDIO/Ti.AudioSelector/android/build/generated/java/de/appwerft/audioselector/AudioselectorBootstrap.java"
 "/Users/fuerst/Documents/APPC_WORKSPACE/AUDIO/Ti.AudioSelector/android/build/generated/r/android/support/compat/R.java"
 "/Users/fuerst/Documents/APPC_WORKSPACE/AUDIO/Ti.AudioSelector/android/build/generated/r/android/support/coreui/R.java"
 "/Users/fuerst/Documents/APPC_WORKSPACE/AUDIO/Ti.AudioSelector/android/build/generated/r/android/support/coreutils/R.java"
