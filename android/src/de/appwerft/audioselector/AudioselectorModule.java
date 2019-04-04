@@ -393,7 +393,7 @@ public class AudioselectorModule extends KrollModule {
 		}
 
 		@Kroll.method
-		public void register(String receiver, Object cb) {
+		public void registerReceiver(String receiver, Object cb) {
 			if (receiver.equals("becomingnoisy")) {
 				if (cb instanceof KrollFunction) {
 					becomingNoisyCallback = (KrollFunction) cb;
@@ -402,7 +402,7 @@ public class AudioselectorModule extends KrollModule {
 			}
 		}
 		@Kroll.method
-		public void unregister(String receiver, @Kroll.argument(optional=true) Object cb) {
+		public void unregisterReceiver(String receiver, @Kroll.argument(optional=true) Object cb) {
 			if (receiver.equals("becomingnoisy")) {
 				ctx.unregisterReceiver(becomingNoisyReceiver);
 			}
