@@ -1,4 +1,4 @@
-/Users/fuerst/Documents/APPC_WORKSPACE/AUDIO/Ti.Audioselector/android/build/generated/obj/local/arm64-v8a/objs/de.appwerft.audioselector/__/AudioselectorBootstrap.o: \
+/Users/fuerst/Documents/APPC_WORKSPACE/AUDIO/Ti.AudioSelector/android/build/generated/obj/local/arm64-v8a/objs/de.appwerft.audioselector/__/AudioselectorBootstrap.o: \
  jni/../AudioselectorBootstrap.cpp \
  /Users/fuerst/Library/Application\ Support/Titanium/mobilesdk/osx/8.0.0.GA/android/native/include/v8.h \
  /Users/fuerst/Library/Android/ndk/sources/cxx-stl/llvm-libc++/../../android/support/include/stdint.h \

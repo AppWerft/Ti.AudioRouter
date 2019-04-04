@@ -11,19 +11,30 @@ package de.appwerft.audioselector;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 import org.appcelerator.kroll.KrollModule;
+import org.appcelerator.kroll.KrollDict;
+
 import org.appcelerator.kroll.annotations.Kroll;
 
 import org.appcelerator.titanium.TiApplication;
 
+import android.bluetooth.BluetoothA2dp;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothHeadset;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothDevice;
+
 import android.content.Context;
 import android.media.AudioAttributes;
 import android.media.AudioDeviceInfo;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioPlaybackConfiguration;
+import android.media.MediaRouter;
+import android.media.MediaRouter.RouteInfo;
 import android.os.Build;
 
 import org.appcelerator.kroll.common.Log;
@@ -35,7 +46,7 @@ public class AudioselectorModule extends KrollModule {
 	// Standard Debugging variables
 	private static final String LCAT = "AudioselectorModule";
 	private static final boolean DBG = TiConfig.LOGD;
-	private AudioManager audioManager;
+	
 
 	@Kroll.constant
 	public static final int TYPE_AUX_LINE = AudioDeviceInfo.TYPE_AUX_LINE;
@@ -100,17 +111,26 @@ public class AudioselectorModule extends KrollModule {
 	public static final int RINGER_MODE_SILENT = AudioManager.RINGER_MODE_SILENT;
 	@Kroll.constant
 	public static final int RINGER_MODE_VIBRATE = AudioManager.RINGER_MODE_VIBRATE;
-	
-	
+
+	public static Context ctx;
+	private static AudioManager audioManager;
+
+	// Get the default adapter
+	BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
+	public BluetoothHeadset bluetoothHeadset;
+	public BluetoothA2dp bluetoothA2dp;
+
 	public AudioselectorModule() {
 		super();
-		audioManager = (AudioManager) TiApplication.getInstance().getApplicationContext()
-				.getSystemService(Context.AUDIO_SERVICE);
 	}
 
 	@Kroll.onAppCreate
 	public static void onAppCreate(TiApplication app) {
 		Log.d(LCAT, "inside onAppCreate");
+		ctx = app.getApplicationContext();
+		audioManager = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
+
 		// put module init code that needs to run when the application is created
 	}
 
@@ -119,7 +139,25 @@ public class AudioselectorModule extends KrollModule {
 	public void setRingerMode(int tone) {
 		audioManager.setRingerMode(tone);
 	}
-	
+
+	@Kroll.method
+	public Object[] getBoundedDevices() {
+		ArrayList<HashMap> resList = new ArrayList<HashMap>();
+		Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
+		if (pairedDevices.size() > 0) {
+			// There are paired devices. Get the name and address of each paired device.
+			for (BluetoothDevice device : pairedDevices) {
+				KrollDict dict = new KrollDict();
+				dict.put("devicename", device.getName());
+				dict.put("address", device.getAddress()); // MAC address
+				dict.put("type", device.getType());
+				dict.put("type", device.getType());
+				resList.add(dict);
+			}
+		}
+		return resList.toArray();
+	}
+
 	@Kroll.method
 	public Object[] getDevices() {
 		@SuppressWarnings("rawtypes")
@@ -152,9 +190,10 @@ public class AudioselectorModule extends KrollModule {
 			return null;
 		ArrayList<HashMap> configurationList = new ArrayList<HashMap>();
 		final List<AudioPlaybackConfiguration> configurations = audioManager.getActivePlaybackConfigurations();
+		Log.d(LCAT, "Count of AudioPlaybackConfigurations: " + configurations.size());
 		for (AudioPlaybackConfiguration configuration : configurations) {
 			HashMap<String, Object> opt = new HashMap<String, Object>();
-			opt.put("describecontents",configuration.describeContents());
+			opt.put("describecontents", configuration.describeContents());
 			// audioattributes
 			HashMap<String, Object> audioattributes = new HashMap<String, Object>();
 			AudioAttributes aa = configuration.getAudioAttributes();
@@ -163,13 +202,10 @@ public class AudioselectorModule extends KrollModule {
 			audioattributes.put("flags", aa.getFlags());
 			audioattributes.put("usage", aa.getUsage());
 			audioattributes.put("volumecontrolstream", aa.getVolumeControlStream());
-			opt.put("audioattributes",audioattributes);
-			
+			opt.put("audioattributes", audioattributes);
 			configurationList.add(opt);
 		}
-		
 		return configurationList.toArray();
-
 	}
 
 	@Kroll.method
@@ -219,8 +255,83 @@ public class AudioselectorModule extends KrollModule {
 		audioManager.setWiredHeadsetOn(true);
 	}
 
-	public static void connectBluetooth(AudioManager audioManager) {
+	public static void connectBluetoothA2DP(AudioManager audioManager) {
 		reset(audioManager);
+		audioManager.setBluetoothA2dpOn(true);
 	}
 
+	// https://www.programcreek.com/java-api-examples/?class=android.media.AudioManager&method=MODE_NORMAL
+	@Kroll.method
+	public int getActiveAudioDevice() {
+		int type = 0;
+		if (audioManager.isBluetoothA2dpOn()) {
+			type = AudioDeviceInfo.TYPE_BLUETOOTH_A2DP;
+			// Adjust output for Bluetooth.
+		} else if (audioManager.isSpeakerphoneOn()) {
+			type = AudioDeviceInfo.TYPE_BUILTIN_SPEAKER;
+			// Adjust output for Speakerphone.
+		} else if (audioManager.isWiredHeadsetOn()) {
+			type = AudioDeviceInfo.TYPE_WIRED_HEADSET;
+			// Adjust output for headsets
+		} else {
+			// If audio plays and noone can hear it, is it still playing?
+		}
+		return type;
+	}
+
+	@Kroll.method
+	public void setActiveAudioDevice(int type) {
+		switch (type) {
+		case AudioDeviceInfo.TYPE_BLUETOOTH_A2DP:
+			connectBluetoothA2DP(audioManager);
+			break;
+		case AudioDeviceInfo.TYPE_BUILTIN_SPEAKER:
+			connectSpeaker(audioManager);
+			break;
+		case AudioDeviceInfo.TYPE_WIRED_HEADSET:
+			connectHeadphones(audioManager);
+			break;
+		}
+
+	}
+
+	private BluetoothProfile.ServiceListener headsetListener = new BluetoothProfile.ServiceListener() {
+		public void onServiceConnected(int profile, BluetoothProfile proxy) {
+			if (profile == BluetoothProfile.HEADSET) {
+				bluetoothHeadset = (BluetoothHeadset) proxy;
+			}
+		}
+
+		public void onServiceDisconnected(int profile) {
+			if (profile == BluetoothProfile.HEADSET) {
+				bluetoothHeadset = null;
+			}
+		}
+	};
+	private BluetoothProfile.ServiceListener a2dpListener = new BluetoothProfile.ServiceListener() {
+		public void onServiceConnected(int profile, BluetoothProfile proxy) {
+			if (profile == BluetoothProfile.A2DP) {
+				bluetoothA2dp = (BluetoothA2dp) proxy;
+			}
+		}
+
+		public void onServiceDisconnected(int profile) {
+			if (profile == BluetoothProfile.A2DP) {
+				bluetoothA2dp = null;
+			}
+		}
+	};
+
+	public void BTinit() {
+		// Establish connection to the proxy.
+		bluetoothAdapter.getProfileProxy(ctx, headsetListener, BluetoothProfile.HEADSET);
+		bluetoothAdapter.getProfileProxy(ctx, a2dpListener, BluetoothProfile.A2DP);
+
+		// ... call functions on bluetoothHeadset
+
+		// Close proxy connection after use.
+		bluetoothAdapter.closeProfileProxy(BluetoothProfile.HEADSET, bluetoothHeadset);
+		bluetoothAdapter.closeProfileProxy(BluetoothProfile.A2DP, bluetoothA2dp);
+
+	}
 }

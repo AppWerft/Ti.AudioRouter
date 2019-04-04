@@ -33,7 +33,10 @@ private:
 	// Methods -----------------------------------------------------------
 	static void setRingerMode(const v8::FunctionCallbackInfo<v8::Value>&);
 	static void getDevices(const v8::FunctionCallbackInfo<v8::Value>&);
+	static void getActiveAudioDevice(const v8::FunctionCallbackInfo<v8::Value>&);
 	static void getActivePlaybackConfigurations(const v8::FunctionCallbackInfo<v8::Value>&);
+	static void setActiveAudioDevice(const v8::FunctionCallbackInfo<v8::Value>&);
+	static void getBoundedDevices(const v8::FunctionCallbackInfo<v8::Value>&);
 	static void isBluetoothA2dpOn(const v8::FunctionCallbackInfo<v8::Value>&);
 	static void isSpeakerphoneOn(const v8::FunctionCallbackInfo<v8::Value>&);
 	static void isBluetoothScoOn(const v8::FunctionCallbackInfo<v8::Value>&);

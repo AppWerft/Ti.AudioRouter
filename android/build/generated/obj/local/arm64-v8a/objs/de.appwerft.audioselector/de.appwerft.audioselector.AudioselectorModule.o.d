@@ -1,4 +1,4 @@
-/Users/fuerst/Documents/APPC_WORKSPACE/AUDIO/Ti.Audioselector/android/build/generated/obj/local/arm64-v8a/objs/de.appwerft.audioselector/de.appwerft.audioselector.AudioselectorModule.o: \
+/Users/fuerst/Documents/APPC_WORKSPACE/AUDIO/Ti.AudioSelector/android/build/generated/obj/local/arm64-v8a/objs/de.appwerft.audioselector/de.appwerft.audioselector.AudioselectorModule.o: \
  jni/de.appwerft.audioselector.AudioselectorModule.cpp \
  jni/de.appwerft.audioselector.AudioselectorModule.h \
  /Users/fuerst/Library/Application\ Support/Titanium/mobilesdk/osx/8.0.0.GA/android/native/include/Proxy.h \
