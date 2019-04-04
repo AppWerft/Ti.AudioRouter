@@ -216,7 +216,7 @@ public class AudioselectorModule extends KrollModule {
 
 	@Kroll.method
 	public static boolean isWiredHeadsetOn() {
-		return audioManager.isWiredHeadsetOn();
+		return isHeadsetOn();
 	}
 
 	// https://stackoverflow.com/questions/47057889/how-to-switch-audio-output-from-phone-phone-speaker-earphones-or-bluetooth-dev
@@ -323,6 +323,30 @@ public class AudioselectorModule extends KrollModule {
 		// Close proxy connection after use.
 		bluetoothAdapter.closeProfileProxy(BluetoothProfile.HEADSET, bluetoothHeadset);
 		bluetoothAdapter.closeProfileProxy(BluetoothProfile.A2DP, bluetoothA2dp);
+
+	}
+	private static boolean isHeadsetOn() {
+	    AudioManager am = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
+
+	    if (am == null)
+	        return false;
+
+	    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+	        return am.isWiredHeadsetOn() || am.isBluetoothScoOn() || am.isBluetoothA2dpOn();
+	    } else {
+	        AudioDeviceInfo[] devices = am.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
+
+	        for (int i = 0; i < devices.length; i++) {
+	            AudioDeviceInfo device = devices[i];
+
+	            if (device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADSET
+	                    || device.getType() == AudioDeviceInfo.TYPE_WIRED_HEADPHONES
+	                    ) {
+	                return true;
+	            }
+	        }
+	    }
+	    return false;
 
 	}
 }
