@@ -33,6 +33,7 @@ private:
 	// Methods -----------------------------------------------------------
 	static void getDevices(const v8::FunctionCallbackInfo<v8::Value>&);
 	static void getActiveAudioDevice(const v8::FunctionCallbackInfo<v8::Value>&);
+	static void setTypeOn(const v8::FunctionCallbackInfo<v8::Value>&);
 	static void getActivePlaybackConfigurations(const v8::FunctionCallbackInfo<v8::Value>&);
 	static void setActiveAudioDevice(const v8::FunctionCallbackInfo<v8::Value>&);
 	static void isSpeakerphoneOn(const v8::FunctionCallbackInfo<v8::Value>&);

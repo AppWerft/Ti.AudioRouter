@@ -224,6 +224,11 @@ public class AudioselectorModule extends KrollModule {
 	}
 
 	@Kroll.method
+	public void setTypeOn(int type) {
+		setActiveAudioDevice(type);
+	}
+
+	@Kroll.method
 	public boolean isBluetoothA2dpOn() {
 		return audioManager.isBluetoothA2dpOn();
 	}
@@ -375,5 +380,5 @@ public class AudioselectorModule extends KrollModule {
 
 	private IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
 	NoisyAudioStreamReceiver noisyAudioStreamReceiver = new NoisyAudioStreamReceiver();
-	
+
 }
