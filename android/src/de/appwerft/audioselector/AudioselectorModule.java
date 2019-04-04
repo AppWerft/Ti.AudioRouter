@@ -402,7 +402,7 @@ public class AudioselectorModule extends KrollModule {
 			}
 		}
 		@Kroll.method
-		public void unregister(String receiver, Object cb) {
+		public void unregister(String receiver, @Kroll.argument(optional=true) Object cb) {
 			if (receiver.equals("becomingnoisy")) {
 				ctx.unregisterReceiver(becomingNoisyReceiver);
 			}
