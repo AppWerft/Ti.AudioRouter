@@ -12,5 +12,6 @@
 			<attribute name="optional" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="/Users/fuerst/Library/Android/sdk/extras/android/support/annotations/android-support-annotations.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

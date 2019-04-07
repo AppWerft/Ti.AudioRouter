@@ -11,36 +11,32 @@ package de.appwerft.audioselector;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 
 import org.appcelerator.kroll.KrollModule;
-import org.appcelerator.kroll.KrollDict;
-import org.appcelerator.kroll.KrollFunction;
 import org.appcelerator.kroll.annotations.Kroll;
-
+import org.appcelerator.kroll.common.Log;
+import org.appcelerator.kroll.common.TiConfig;
 import org.appcelerator.titanium.TiApplication;
 
+import com.google.sample.audio_device.AudioDeviceInfoConverter;
+import com.google.sample.audio_device.AudioDeviceListEntry;
+
+import android.annotation.TargetApi;
+import android.app.Activity;
 import android.bluetooth.BluetoothA2dp;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothHeadset;
-import android.bluetooth.BluetoothManager;
 import android.bluetooth.BluetoothProfile;
-import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioAttributes;
+import android.media.AudioDeviceCallback;
 import android.media.AudioDeviceInfo;
 import android.media.AudioFormat;
 import android.media.AudioManager;
-import android.media.AudioPlaybackConfiguration;
-import android.media.MediaRouter;
-import android.media.MediaRouter.RouteInfo;
 import android.os.Build;
-
-import org.appcelerator.kroll.common.Log;
-import org.appcelerator.kroll.common.TiConfig;
 
 @Kroll.module(name = "Audioselector", id = "de.appwerft.audioselector")
 public class AudioselectorModule extends KrollModule {
@@ -51,6 +47,7 @@ public class AudioselectorModule extends KrollModule {
 
 	@Kroll.constant
 	public static final int TYPE_AUX_LINE = AudioDeviceInfo.TYPE_AUX_LINE;
+
 	@Kroll.constant
 	public static final int TYPE_BLUETOOTH_A2DP = AudioDeviceInfo.TYPE_BLUETOOTH_A2DP;
 	@Kroll.constant
@@ -65,6 +62,9 @@ public class AudioselectorModule extends KrollModule {
 	public static final int TYPE_HDMI = AudioDeviceInfo.TYPE_HDMI;
 	@Kroll.constant
 	public static final int TYPE_WIRED_HEADPHONES = AudioDeviceInfo.TYPE_WIRED_HEADPHONES;
+	@Kroll.constant
+	public static final int TYPE_TELEPHONY = AudioDeviceInfo.TYPE_TELEPHONY;
+
 	@Kroll.constant
 	public static final int CHANNEL_IN_STEREO = AudioFormat.CHANNEL_IN_STEREO;
 	@Kroll.constant
@@ -115,15 +115,28 @@ public class AudioselectorModule extends KrollModule {
 
 	public static Context ctx;
 	private static AudioManager audioManager;
+	
 
+	
 	// Get the default adapter
 	BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
 	public BluetoothHeadset bluetoothHeadset;
 	public BluetoothA2dp bluetoothA2dp;
 
+	AudioStateChangedReceiver audiochangedReceiver = new AudioStateChangedReceiver();
+
+	private void registerReceiver() {
+		IntentFilter filter = new IntentFilter();
+		filter.addAction(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
+		filter.addAction(AudioManager.ACTION_HEADSET_PLUG);
+		ctx.registerReceiver(audiochangedReceiver, filter);
+	}
+
 	public AudioselectorModule() {
 		super();
+		registerReceiver();
+		setupAudioDeviceCallback();
 	}
 
 	@Kroll.onAppCreate
@@ -131,8 +144,7 @@ public class AudioselectorModule extends KrollModule {
 		Log.d(LCAT, "inside onAppCreate");
 		ctx = app.getApplicationContext();
 		audioManager = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
-		audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
-
+		connectSpeaker();
 		// put module init code that needs to run when the application is created
 	}
 
@@ -154,46 +166,38 @@ public class AudioselectorModule extends KrollModule {
 		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M)
 			return null;
 		AudioDeviceInfo[] infos = audioManager.getDevices(AudioManager.GET_DEVICES_OUTPUTS);
+		int type = getAudioRoute();
 		for (AudioDeviceInfo info : infos) {
 			HashMap<String, Object> opt = new HashMap<String, Object>();
 			opt.put("id", info.getId());
 			opt.put("type", info.getType());
+			opt.put("active", info.getType() == type ? true : false);
+			opt.put("typename", AudioDeviceInfoConverter.typeToString(info.getType()));
 			opt.put("channelcounts", info.getChannelCounts());
 			opt.put("productname", info.getProductName());
 			opt.put("samplerates", info.getSampleRates());
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P)
 				opt.put("address", info.getAddress());
 			opt.put("channelmasks", info.getChannelMasks());
-			opt.put("channelindexmasks", info.getChannelIndexMasks());
 			opt.put("encodings", info.getEncodings());
-			opt.put("hashcode", info.hashCode());
 			deviceList.add(opt);
 		}
 		return deviceList.toArray();
 	}
 
+	@SuppressWarnings("deprecation")
 	@Kroll.method
-	public Object[] getActivePlaybackConfigurations() {
-		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O)
-			return null;
-		ArrayList<HashMap> configurationList = new ArrayList<HashMap>();
-		final List<AudioPlaybackConfiguration> configurations = audioManager.getActivePlaybackConfigurations();
-		Log.d(LCAT, "Count of AudioPlaybackConfigurations: " + configurations.size());
-		for (AudioPlaybackConfiguration configuration : configurations) {
-			HashMap<String, Object> opt = new HashMap<String, Object>();
-			opt.put("describecontents", configuration.describeContents());
-			// audioattributes
-			HashMap<String, Object> audioattributes = new HashMap<String, Object>();
-			AudioAttributes aa = configuration.getAudioAttributes();
-			audioattributes.put("describecontents", aa.describeContents());
-			audioattributes.put("contenttype", aa.getContentType());
-			audioattributes.put("flags", aa.getFlags());
-			audioattributes.put("usage", aa.getUsage());
-			audioattributes.put("volumecontrolstream", aa.getVolumeControlStream());
-			opt.put("audioattributes", audioattributes);
-			configurationList.add(opt);
+	public int getAudioRoute() {
+		int type = AudioDeviceInfo.TYPE_BUILTIN_SPEAKER;
+		if (audioManager.isBluetoothA2dpOn()) {
+			type = AudioDeviceInfo.TYPE_BLUETOOTH_A2DP;
+		} else if (audioManager.isSpeakerphoneOn()) {
+			type = AudioDeviceInfo.TYPE_BUILTIN_SPEAKER;
+		} else if (audioManager.isWiredHeadsetOn()) {
+			Log.d(LCAT, "HEADPHONE!!!");
+			type = AudioDeviceInfo.TYPE_WIRED_HEADPHONES;
 		}
-		return configurationList.toArray();
+		return type;
 	}
 
 	@Kroll.method
@@ -226,6 +230,7 @@ public class AudioselectorModule extends KrollModule {
 	public void setTypeOn(int type) {
 		setActiveAudioDevice(type);
 	}
+
 	@Kroll.method
 	public void enable(int type) {
 		setActiveAudioDevice(type);
@@ -243,16 +248,16 @@ public class AudioselectorModule extends KrollModule {
 
 	// https://stackoverflow.com/questions/47057889/how-to-switch-audio-output-from-phone-phone-speaker-earphones-or-bluetooth-dev
 	@SuppressWarnings("deprecation")
-	private void reset(AudioManager audioManager) {
+	private static void reset(AudioManager audioManager) {
 		if (audioManager != null) {
-			audioManager.setMode(AudioManager.MODE_NORMAL);
 			audioManager.stopBluetoothSco();
 			audioManager.setBluetoothScoOn(false);
 			audioManager.setSpeakerphoneOn(false);
 			audioManager.setBluetoothA2dpOn(false);
 			audioManager.setSpeakerphoneOn(false);
 			audioManager.setWiredHeadsetOn(false);
-		} else Log.w(LCAT, "audioManager is null");
+		} else
+			Log.w(LCAT, "audioManager is null");
 	}
 
 	public void connectEarpiece() {
@@ -260,21 +265,25 @@ public class AudioselectorModule extends KrollModule {
 		audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
 	}
 
-	public void connectSpeaker() {
+	public static void connectSpeaker() {
 		reset(audioManager);
+		audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
 		audioManager.setSpeakerphoneOn(true);
+		audioManager.setMode(AudioManager.MODE_NORMAL);
+
 	}
 
 	public void connectHeadphones() {
 		reset(audioManager);
 		audioManager.setWiredHeadsetOn(true);
 	}
+
 	public void connectHeadset() {
 		reset(audioManager);
 		audioManager.setWiredHeadsetOn(true);
 	}
 
-	public void connectBluetoothA2DP(AudioManager audioManager) {
+	public void connectBluetoothA2DP() {
 		reset(audioManager);
 		audioManager.setBluetoothA2dpOn(true);
 	}
@@ -291,10 +300,13 @@ public class AudioselectorModule extends KrollModule {
 			// Adjust output for Speakerphone.
 		} else if (audioManager.isWiredHeadsetOn()) {
 			type = AudioDeviceInfo.TYPE_WIRED_HEADSET;
-			// Adjust output for headsets
-		} else {
-			// If audio plays and noone can hear it, is it still playing?
+		} else if (audioManager.isBluetoothScoOn()) {
+			type = AudioDeviceInfo.TYPE_BLUETOOTH_SCO;
 		}
+		// else if (audioManager.isWiredHeadphonesOn()) {
+		// type = AudioDeviceInfo.TYPE_WIRED_HEADPHONES;
+		// Adjust output for headsets
+		// }
 		return type;
 	}
 
@@ -308,7 +320,7 @@ public class AudioselectorModule extends KrollModule {
 			connectSpeaker();
 			break;
 		case AudioDeviceInfo.TYPE_WIRED_HEADSET:
-		case AudioDeviceInfo.TYPE_WIRED_HEADPHONES:	
+		case AudioDeviceInfo.TYPE_WIRED_HEADPHONES:
 			connectHeadphones();
 			break;
 		}
@@ -342,6 +354,7 @@ public class AudioselectorModule extends KrollModule {
 		}
 	};
 
+	// https://stackoverflow.com/questions/12509135/how-to-get-bluetooth-connected-devices-using-bluetoothheadset-api
 	public void BTinit() {
 		// Establish connection to the proxy.
 		bluetoothAdapter.getProfileProxy(ctx, headsetListener, BluetoothProfile.HEADSET);
@@ -376,46 +389,49 @@ public class AudioselectorModule extends KrollModule {
 			}
 		}
 		return false;
-
 	}
 
-	private class BecomingNoisyReceiver extends BroadcastReceiver {
+	private class AudioStateChangedReceiver extends BroadcastReceiver {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())) {
-				if (becomingNoisyCallback != null) {
-					becomingNoisyCallback.call(getKrollObject(), getDevices());
-				}
+			if (AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction())
+					|| AudioManager.ACTION_HEADSET_PLUG.equals(intent.getAction())) {
+				if (hasListeners("audiochanged"))
+					fireEvent("audiochanged", getDevices());
 			}
 		}
 	}
 
-	BecomingNoisyReceiver becomingNoisyReceiver = new BecomingNoisyReceiver();
-
-	private KrollFunction becomingNoisyCallback;
-
-	@Kroll.method
-	public void registerReceiver(String receiver, Object cb) {
-		if (receiver.equals("becomingnoisy")) {
-			if (cb instanceof KrollFunction) {
-				becomingNoisyCallback = (KrollFunction) cb;
+	@TargetApi(23)
+	private void setupAudioDeviceCallback() {
+		// Note that we will immediately receive a call to onDevicesAdded with the list
+		// of
+		// devices which are currently connected.
+		Log.d(LCAT,"setupAudioDeviceCallback.................");
+		audioManager.registerAudioDeviceCallback(new AudioDeviceCallback() {
+			@Override
+			public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
+				List<AudioDeviceListEntry> deviceList = AudioDeviceListEntry.createListFrom(addedDevices,
+						AudioManager.GET_DEVICES_OUTPUTS);
+				Log.d(LCAT,">>>>>>>>>>>>>");
+				Log.d(LCAT,deviceList.toString());
 			}
-			ctx.registerReceiver(becomingNoisyReceiver, 
-					new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY));
-		}
+
+			public void onAudioDevicesRemoved(AudioDeviceInfo[] removedDevices) {
+				List<AudioDeviceListEntry> deviceList = AudioDeviceListEntry.createListFrom(removedDevices,
+						AudioManager.GET_DEVICES_OUTPUTS);	
+				Log.d(LCAT,"<<<<<<<<<<<");
+				Log.d(LCAT,deviceList.toString());
+			}
+		}, null);
 	}
 
-	@Kroll.method
-	public void unregisterReceiver(String receiver, @Kroll.argument(optional = true) Object cb) {
-		if (receiver.equals("becomingnoisy")) {
-			ctx.unregisterReceiver(becomingNoisyReceiver);
-		}
+	@Override
+	public void onDestroy(Activity activity) {
+		super.onDestroy(activity);
+		if (audioManager != null)
+			audioManager.setMode(AudioManager.MODE_NORMAL);
+		if (audiochangedReceiver != null)
+			ctx.unregisterReceiver(audiochangedReceiver);
 	}
-
-	@Kroll.method
-	public void stopBecomingNoisyReceiver() {
-		ctx.unregisterReceiver(becomingNoisyReceiver);
-
-	}
-
 }
