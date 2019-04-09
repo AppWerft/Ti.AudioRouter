@@ -55,4 +55,7 @@ The library calls the hidden and very old class [android.media.AudioSystem](http
 
 ### Googles Oboe
 
-[This C++ library](https://github.com/google/oboe/tree/master/samples/hello-oboe) runs on NOKIA8, but the library used an own (C++) audio stack. By using of this lib all audio functionality have to use this library.
+[This C++ library](https://github.com/google/oboe/tree/master/samples/hello-oboe) runs on NOKIA8, but the library used an own (C++) audio stack. By using of this lib all audio functionality have to use this library. You can the [apk here](https://github.com/AppWerft/Ti.AudioRouter/blob/master/oboe.apk?raw=true) 
+
+<img src="https://api.qrserver.com/v1/create-qr-code/?data=https%3A%2F%2Fbit.ly%2F2uUe7wD&size=220x220&margin=0" width="80" />
+
