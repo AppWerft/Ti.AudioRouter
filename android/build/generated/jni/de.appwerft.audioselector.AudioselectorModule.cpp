@@ -95,20 +95,16 @@ Local<FunctionTemplate> AudioselectorModule::getProxyTemplate(v8::Isolate* isola
 	t->Set(titanium::Proxy::inheritSymbol.Get(isolate), FunctionTemplate::New(isolate, titanium::Proxy::inherit<AudioselectorModule>));
 
 	// Method bindings --------------------------------------------------------
+	titanium::SetProtoMethod(isolate, t, "setRoute", AudioselectorModule::setRoute);
 	titanium::SetProtoMethod(isolate, t, "getDevices", AudioselectorModule::getDevices);
 	titanium::SetProtoMethod(isolate, t, "getActiveAudioDevice", AudioselectorModule::getActiveAudioDevice);
-	titanium::SetProtoMethod(isolate, t, "setTypeOn", AudioselectorModule::setTypeOn);
 	titanium::SetProtoMethod(isolate, t, "setActiveAudioDevice", AudioselectorModule::setActiveAudioDevice);
-	titanium::SetProtoMethod(isolate, t, "getAudioRoute", AudioselectorModule::getAudioRoute);
-	titanium::SetProtoMethod(isolate, t, "isSpeakerphoneOn", AudioselectorModule::isSpeakerphoneOn);
-	titanium::SetProtoMethod(isolate, t, "isWiredHeadsetOn", AudioselectorModule::isWiredHeadsetOn);
-	titanium::SetProtoMethod(isolate, t, "setRingerMode", AudioselectorModule::setRingerMode);
-	titanium::SetProtoMethod(isolate, t, "enable", AudioselectorModule::enable);
-	titanium::SetProtoMethod(isolate, t, "getRingerMode", AudioselectorModule::getRingerMode);
+	titanium::SetProtoMethod(isolate, t, "isRoute", AudioselectorModule::isRoute);
 	titanium::SetProtoMethod(isolate, t, "isMusicActive", AudioselectorModule::isMusicActive);
 	titanium::SetProtoMethod(isolate, t, "isBluetoothA2dpOn", AudioselectorModule::isBluetoothA2dpOn);
+	titanium::SetProtoMethod(isolate, t, "isSpeakerphoneOn", AudioselectorModule::isSpeakerphoneOn);
 	titanium::SetProtoMethod(isolate, t, "isBluetoothScoOn", AudioselectorModule::isBluetoothScoOn);
-	titanium::SetProtoMethod(isolate, t, "isTypeOn", AudioselectorModule::isTypeOn);
+	titanium::SetProtoMethod(isolate, t, "isWiredHeadsetOn", AudioselectorModule::isWiredHeadsetOn);
 
 	Local<ObjectTemplate> prototypeTemplate = t->PrototypeTemplate();
 	Local<ObjectTemplate> instanceTemplate = t->InstanceTemplate();
@@ -203,6 +199,102 @@ Local<FunctionTemplate> AudioselectorModule::getProxyTemplate(v8::Local<v8::Cont
 }
 
 // Methods --------------------------------------------------------------------
+void AudioselectorModule::setRoute(const FunctionCallbackInfo<Value>& args)
+{
+	LOGD(TAG, "setRoute()");
+	Isolate* isolate = args.GetIsolate();
+	Local<Context> context = isolate->GetCurrentContext();
+	HandleScope scope(isolate);
+
+	JNIEnv *env = titanium::JNIScope::getEnv();
+	if (!env) {
+		titanium::JSException::GetJNIEnvironmentError(isolate);
+		return;
+	}
+	static jmethodID methodID = NULL;
+	if (!methodID) {
+		methodID = env->GetMethodID(AudioselectorModule::javaClass, "setRoute", "(I)V");
+		if (!methodID) {
+			const char *error = "Couldn't find proxy method 'setRoute' with signature '(I)V'";
+			LOGE(TAG, error);
+				titanium::JSException::Error(isolate, error);
+				return;
+		}
+	}
+
+	Local<Object> holder = args.Holder();
+	if (!JavaObject::isJavaObject(holder)) {
+		holder = holder->FindInstanceInPrototypeChain(getProxyTemplate(isolate));
+	}
+	if (holder.IsEmpty() || holder->IsNull()) {
+		LOGE(TAG, "Couldn't obtain argument holder");
+		args.GetReturnValue().Set(v8::Undefined(isolate));
+		return;
+	}
+	titanium::Proxy* proxy = NativeObject::Unwrap<titanium::Proxy>(holder);
+	if (!proxy) {
+		args.GetReturnValue().Set(Undefined(isolate));
+		return;
+	}
+
+	if (args.Length() < 1) {
+		char errorStringBuffer[100];
+		sprintf(errorStringBuffer, "setRoute: Invalid number of arguments. Expected 1 but got %d", args.Length());
+		titanium::JSException::Error(isolate, errorStringBuffer);
+		return;
+	}
+
+	jvalue jArguments[1];
+
+
+
+
+	
+		if ((titanium::V8Util::isNaN(isolate, args[0]) && !args[0]->IsUndefined()) || args[0]->ToString(context).FromMaybe(String::Empty(isolate))->Length() == 0) {
+			const char *error = "Invalid value, expected type Number.";
+			LOGE(TAG, error);
+			titanium::JSException::Error(isolate, error);
+			return;
+		}
+		if (!args[0]->IsNull()) {
+		MaybeLocal<Number> arg_0 = args[0]->ToNumber(context);
+		if (arg_0.IsEmpty()) {
+			const char *error = "Invalid argument at index 0, expected type Number and failed to coerce.";
+			LOGE(TAG, error);
+			titanium::JSException::Error(isolate, error);
+			return;
+		} else {
+			jArguments[0].i =
+				titanium::TypeConverter::jsNumberToJavaInt(
+					env, arg_0.ToLocalChecked());
+		}
+	} else {
+		jArguments[0].i = NULL;
+	}
+
+
+	jobject javaProxy = proxy->getJavaObject();
+	if (javaProxy == NULL) {
+		args.GetReturnValue().Set(v8::Undefined(isolate));
+		return;
+	}
+	env->CallVoidMethodA(javaProxy, methodID, jArguments);
+
+	proxy->unreferenceJavaObject(javaProxy);
+
+
+
+	if (env->ExceptionCheck()) {
+		titanium::JSException::fromJavaException(isolate);
+		env->ExceptionClear();
+	}
+
+
+
+
+	args.GetReturnValue().Set(v8::Undefined(isolate));
+
+}
 void AudioselectorModule::getDevices(const FunctionCallbackInfo<Value>& args)
 {
 	LOGD(TAG, "getDevices()");
@@ -344,102 +436,6 @@ void AudioselectorModule::getActiveAudioDevice(const FunctionCallbackInfo<Value>
 	args.GetReturnValue().Set(v8Result);
 
 }
-void AudioselectorModule::setTypeOn(const FunctionCallbackInfo<Value>& args)
-{
-	LOGD(TAG, "setTypeOn()");
-	Isolate* isolate = args.GetIsolate();
-	Local<Context> context = isolate->GetCurrentContext();
-	HandleScope scope(isolate);
-
-	JNIEnv *env = titanium::JNIScope::getEnv();
-	if (!env) {
-		titanium::JSException::GetJNIEnvironmentError(isolate);
-		return;
-	}
-	static jmethodID methodID = NULL;
-	if (!methodID) {
-		methodID = env->GetMethodID(AudioselectorModule::javaClass, "setTypeOn", "(I)V");
-		if (!methodID) {
-			const char *error = "Couldn't find proxy method 'setTypeOn' with signature '(I)V'";
-			LOGE(TAG, error);
-				titanium::JSException::Error(isolate, error);
-				return;
-		}
-	}
-
-	Local<Object> holder = args.Holder();
-	if (!JavaObject::isJavaObject(holder)) {
-		holder = holder->FindInstanceInPrototypeChain(getProxyTemplate(isolate));
-	}
-	if (holder.IsEmpty() || holder->IsNull()) {
-		LOGE(TAG, "Couldn't obtain argument holder");
-		args.GetReturnValue().Set(v8::Undefined(isolate));
-		return;
-	}
-	titanium::Proxy* proxy = NativeObject::Unwrap<titanium::Proxy>(holder);
-	if (!proxy) {
-		args.GetReturnValue().Set(Undefined(isolate));
-		return;
-	}
-
-	if (args.Length() < 1) {
-		char errorStringBuffer[100];
-		sprintf(errorStringBuffer, "setTypeOn: Invalid number of arguments. Expected 1 but got %d", args.Length());
-		titanium::JSException::Error(isolate, errorStringBuffer);
-		return;
-	}
-
-	jvalue jArguments[1];
-
-
-
-
-	
-		if ((titanium::V8Util::isNaN(isolate, args[0]) && !args[0]->IsUndefined()) || args[0]->ToString(context).FromMaybe(String::Empty(isolate))->Length() == 0) {
-			const char *error = "Invalid value, expected type Number.";
-			LOGE(TAG, error);
-			titanium::JSException::Error(isolate, error);
-			return;
-		}
-		if (!args[0]->IsNull()) {
-		MaybeLocal<Number> arg_0 = args[0]->ToNumber(context);
-		if (arg_0.IsEmpty()) {
-			const char *error = "Invalid argument at index 0, expected type Number and failed to coerce.";
-			LOGE(TAG, error);
-			titanium::JSException::Error(isolate, error);
-			return;
-		} else {
-			jArguments[0].i =
-				titanium::TypeConverter::jsNumberToJavaInt(
-					env, arg_0.ToLocalChecked());
-		}
-	} else {
-		jArguments[0].i = NULL;
-	}
-
-
-	jobject javaProxy = proxy->getJavaObject();
-	if (javaProxy == NULL) {
-		args.GetReturnValue().Set(v8::Undefined(isolate));
-		return;
-	}
-	env->CallVoidMethodA(javaProxy, methodID, jArguments);
-
-	proxy->unreferenceJavaObject(javaProxy);
-
-
-
-	if (env->ExceptionCheck()) {
-		titanium::JSException::fromJavaException(isolate);
-		env->ExceptionClear();
-	}
-
-
-
-
-	args.GetReturnValue().Set(v8::Undefined(isolate));
-
-}
 void AudioselectorModule::setActiveAudioDevice(const FunctionCallbackInfo<Value>& args)
 {
 	LOGD(TAG, "setActiveAudioDevice()");
@@ -536,9 +532,9 @@ void AudioselectorModule::setActiveAudioDevice(const FunctionCallbackInfo<Value>
 	args.GetReturnValue().Set(v8::Undefined(isolate));
 
 }
-void AudioselectorModule::getAudioRoute(const FunctionCallbackInfo<Value>& args)
+void AudioselectorModule::isRoute(const FunctionCallbackInfo<Value>& args)
 {
-	LOGD(TAG, "getAudioRoute()");
+	LOGD(TAG, "isRoute()");
 	Isolate* isolate = args.GetIsolate();
 	Local<Context> context = isolate->GetCurrentContext();
 	HandleScope scope(isolate);
@@ -550,213 +546,9 @@ void AudioselectorModule::getAudioRoute(const FunctionCallbackInfo<Value>& args)
 	}
 	static jmethodID methodID = NULL;
 	if (!methodID) {
-		methodID = env->GetMethodID(AudioselectorModule::javaClass, "getAudioRoute", "()I");
+		methodID = env->GetMethodID(AudioselectorModule::javaClass, "isRoute", "(I)Z");
 		if (!methodID) {
-			const char *error = "Couldn't find proxy method 'getAudioRoute' with signature '()I'";
-			LOGE(TAG, error);
-				titanium::JSException::Error(isolate, error);
-				return;
-		}
-	}
-
-	Local<Object> holder = args.Holder();
-	if (!JavaObject::isJavaObject(holder)) {
-		holder = holder->FindInstanceInPrototypeChain(getProxyTemplate(isolate));
-	}
-	if (holder.IsEmpty() || holder->IsNull()) {
-		LOGE(TAG, "Couldn't obtain argument holder");
-		args.GetReturnValue().Set(v8::Undefined(isolate));
-		return;
-	}
-	titanium::Proxy* proxy = NativeObject::Unwrap<titanium::Proxy>(holder);
-	if (!proxy) {
-		args.GetReturnValue().Set(Undefined(isolate));
-		return;
-	}
-
-	jvalue* jArguments = 0;
-
-
-	jobject javaProxy = proxy->getJavaObject();
-	if (javaProxy == NULL) {
-		args.GetReturnValue().Set(v8::Undefined(isolate));
-		return;
-	}
-	jint jResult = (jint)env->CallIntMethodA(javaProxy, methodID, jArguments);
-
-
-
-	proxy->unreferenceJavaObject(javaProxy);
-
-
-
-	if (env->ExceptionCheck()) {
-		Local<Value> jsException = titanium::JSException::fromJavaException(isolate);
-		env->ExceptionClear();
-		return;
-	}
-
-
-	Local<Number> v8Result = titanium::TypeConverter::javaIntToJsNumber(isolate, env, jResult);
-
-
-
-	args.GetReturnValue().Set(v8Result);
-
-}
-void AudioselectorModule::isSpeakerphoneOn(const FunctionCallbackInfo<Value>& args)
-{
-	LOGD(TAG, "isSpeakerphoneOn()");
-	Isolate* isolate = args.GetIsolate();
-	Local<Context> context = isolate->GetCurrentContext();
-	HandleScope scope(isolate);
-
-	JNIEnv *env = titanium::JNIScope::getEnv();
-	if (!env) {
-		titanium::JSException::GetJNIEnvironmentError(isolate);
-		return;
-	}
-	static jmethodID methodID = NULL;
-	if (!methodID) {
-		methodID = env->GetMethodID(AudioselectorModule::javaClass, "isSpeakerphoneOn", "()Z");
-		if (!methodID) {
-			const char *error = "Couldn't find proxy method 'isSpeakerphoneOn' with signature '()Z'";
-			LOGE(TAG, error);
-				titanium::JSException::Error(isolate, error);
-				return;
-		}
-	}
-
-	Local<Object> holder = args.Holder();
-	if (!JavaObject::isJavaObject(holder)) {
-		holder = holder->FindInstanceInPrototypeChain(getProxyTemplate(isolate));
-	}
-	if (holder.IsEmpty() || holder->IsNull()) {
-		LOGE(TAG, "Couldn't obtain argument holder");
-		args.GetReturnValue().Set(v8::Undefined(isolate));
-		return;
-	}
-	titanium::Proxy* proxy = NativeObject::Unwrap<titanium::Proxy>(holder);
-	if (!proxy) {
-		args.GetReturnValue().Set(Undefined(isolate));
-		return;
-	}
-
-	jvalue* jArguments = 0;
-
-
-	jobject javaProxy = proxy->getJavaObject();
-	if (javaProxy == NULL) {
-		args.GetReturnValue().Set(v8::Undefined(isolate));
-		return;
-	}
-	jboolean jResult = (jboolean)env->CallBooleanMethodA(javaProxy, methodID, jArguments);
-
-
-
-	proxy->unreferenceJavaObject(javaProxy);
-
-
-
-	if (env->ExceptionCheck()) {
-		Local<Value> jsException = titanium::JSException::fromJavaException(isolate);
-		env->ExceptionClear();
-		return;
-	}
-
-
-	Local<Boolean> v8Result = titanium::TypeConverter::javaBooleanToJsBoolean(isolate, env, jResult);
-
-
-
-	args.GetReturnValue().Set(v8Result);
-
-}
-void AudioselectorModule::isWiredHeadsetOn(const FunctionCallbackInfo<Value>& args)
-{
-	LOGD(TAG, "isWiredHeadsetOn()");
-	Isolate* isolate = args.GetIsolate();
-	Local<Context> context = isolate->GetCurrentContext();
-	HandleScope scope(isolate);
-
-	JNIEnv *env = titanium::JNIScope::getEnv();
-	if (!env) {
-		titanium::JSException::GetJNIEnvironmentError(isolate);
-		return;
-	}
-	static jmethodID methodID = NULL;
-	if (!methodID) {
-		methodID = env->GetMethodID(AudioselectorModule::javaClass, "isWiredHeadsetOn", "()Z");
-		if (!methodID) {
-			const char *error = "Couldn't find proxy method 'isWiredHeadsetOn' with signature '()Z'";
-			LOGE(TAG, error);
-				titanium::JSException::Error(isolate, error);
-				return;
-		}
-	}
-
-	Local<Object> holder = args.Holder();
-	if (!JavaObject::isJavaObject(holder)) {
-		holder = holder->FindInstanceInPrototypeChain(getProxyTemplate(isolate));
-	}
-	if (holder.IsEmpty() || holder->IsNull()) {
-		LOGE(TAG, "Couldn't obtain argument holder");
-		args.GetReturnValue().Set(v8::Undefined(isolate));
-		return;
-	}
-	titanium::Proxy* proxy = NativeObject::Unwrap<titanium::Proxy>(holder);
-	if (!proxy) {
-		args.GetReturnValue().Set(Undefined(isolate));
-		return;
-	}
-
-	jvalue* jArguments = 0;
-
-
-	jobject javaProxy = proxy->getJavaObject();
-	if (javaProxy == NULL) {
-		args.GetReturnValue().Set(v8::Undefined(isolate));
-		return;
-	}
-	jboolean jResult = (jboolean)env->CallBooleanMethodA(javaProxy, methodID, jArguments);
-
-
-
-	proxy->unreferenceJavaObject(javaProxy);
-
-
-
-	if (env->ExceptionCheck()) {
-		Local<Value> jsException = titanium::JSException::fromJavaException(isolate);
-		env->ExceptionClear();
-		return;
-	}
-
-
-	Local<Boolean> v8Result = titanium::TypeConverter::javaBooleanToJsBoolean(isolate, env, jResult);
-
-
-
-	args.GetReturnValue().Set(v8Result);
-
-}
-void AudioselectorModule::setRingerMode(const FunctionCallbackInfo<Value>& args)
-{
-	LOGD(TAG, "setRingerMode()");
-	Isolate* isolate = args.GetIsolate();
-	Local<Context> context = isolate->GetCurrentContext();
-	HandleScope scope(isolate);
-
-	JNIEnv *env = titanium::JNIScope::getEnv();
-	if (!env) {
-		titanium::JSException::GetJNIEnvironmentError(isolate);
-		return;
-	}
-	static jmethodID methodID = NULL;
-	if (!methodID) {
-		methodID = env->GetMethodID(AudioselectorModule::javaClass, "setRingerMode", "(I)V");
-		if (!methodID) {
-			const char *error = "Couldn't find proxy method 'setRingerMode' with signature '(I)V'";
+			const char *error = "Couldn't find proxy method 'isRoute' with signature '(I)Z'";
 			LOGE(TAG, error);
 				titanium::JSException::Error(isolate, error);
 				return;
@@ -780,7 +572,7 @@ void AudioselectorModule::setRingerMode(const FunctionCallbackInfo<Value>& args)
 
 	if (args.Length() < 1) {
 		char errorStringBuffer[100];
-		sprintf(errorStringBuffer, "setRingerMode: Invalid number of arguments. Expected 1 but got %d", args.Length());
+		sprintf(errorStringBuffer, "isRoute: Invalid number of arguments. Expected 1 but got %d", args.Length());
 		titanium::JSException::Error(isolate, errorStringBuffer);
 		return;
 	}
@@ -819,166 +611,7 @@ void AudioselectorModule::setRingerMode(const FunctionCallbackInfo<Value>& args)
 		args.GetReturnValue().Set(v8::Undefined(isolate));
 		return;
 	}
-	env->CallVoidMethodA(javaProxy, methodID, jArguments);
-
-	proxy->unreferenceJavaObject(javaProxy);
-
-
-
-	if (env->ExceptionCheck()) {
-		titanium::JSException::fromJavaException(isolate);
-		env->ExceptionClear();
-	}
-
-
-
-
-	args.GetReturnValue().Set(v8::Undefined(isolate));
-
-}
-void AudioselectorModule::enable(const FunctionCallbackInfo<Value>& args)
-{
-	LOGD(TAG, "enable()");
-	Isolate* isolate = args.GetIsolate();
-	Local<Context> context = isolate->GetCurrentContext();
-	HandleScope scope(isolate);
-
-	JNIEnv *env = titanium::JNIScope::getEnv();
-	if (!env) {
-		titanium::JSException::GetJNIEnvironmentError(isolate);
-		return;
-	}
-	static jmethodID methodID = NULL;
-	if (!methodID) {
-		methodID = env->GetMethodID(AudioselectorModule::javaClass, "enable", "(I)V");
-		if (!methodID) {
-			const char *error = "Couldn't find proxy method 'enable' with signature '(I)V'";
-			LOGE(TAG, error);
-				titanium::JSException::Error(isolate, error);
-				return;
-		}
-	}
-
-	Local<Object> holder = args.Holder();
-	if (!JavaObject::isJavaObject(holder)) {
-		holder = holder->FindInstanceInPrototypeChain(getProxyTemplate(isolate));
-	}
-	if (holder.IsEmpty() || holder->IsNull()) {
-		LOGE(TAG, "Couldn't obtain argument holder");
-		args.GetReturnValue().Set(v8::Undefined(isolate));
-		return;
-	}
-	titanium::Proxy* proxy = NativeObject::Unwrap<titanium::Proxy>(holder);
-	if (!proxy) {
-		args.GetReturnValue().Set(Undefined(isolate));
-		return;
-	}
-
-	if (args.Length() < 1) {
-		char errorStringBuffer[100];
-		sprintf(errorStringBuffer, "enable: Invalid number of arguments. Expected 1 but got %d", args.Length());
-		titanium::JSException::Error(isolate, errorStringBuffer);
-		return;
-	}
-
-	jvalue jArguments[1];
-
-
-
-
-	
-		if ((titanium::V8Util::isNaN(isolate, args[0]) && !args[0]->IsUndefined()) || args[0]->ToString(context).FromMaybe(String::Empty(isolate))->Length() == 0) {
-			const char *error = "Invalid value, expected type Number.";
-			LOGE(TAG, error);
-			titanium::JSException::Error(isolate, error);
-			return;
-		}
-		if (!args[0]->IsNull()) {
-		MaybeLocal<Number> arg_0 = args[0]->ToNumber(context);
-		if (arg_0.IsEmpty()) {
-			const char *error = "Invalid argument at index 0, expected type Number and failed to coerce.";
-			LOGE(TAG, error);
-			titanium::JSException::Error(isolate, error);
-			return;
-		} else {
-			jArguments[0].i =
-				titanium::TypeConverter::jsNumberToJavaInt(
-					env, arg_0.ToLocalChecked());
-		}
-	} else {
-		jArguments[0].i = NULL;
-	}
-
-
-	jobject javaProxy = proxy->getJavaObject();
-	if (javaProxy == NULL) {
-		args.GetReturnValue().Set(v8::Undefined(isolate));
-		return;
-	}
-	env->CallVoidMethodA(javaProxy, methodID, jArguments);
-
-	proxy->unreferenceJavaObject(javaProxy);
-
-
-
-	if (env->ExceptionCheck()) {
-		titanium::JSException::fromJavaException(isolate);
-		env->ExceptionClear();
-	}
-
-
-
-
-	args.GetReturnValue().Set(v8::Undefined(isolate));
-
-}
-void AudioselectorModule::getRingerMode(const FunctionCallbackInfo<Value>& args)
-{
-	LOGD(TAG, "getRingerMode()");
-	Isolate* isolate = args.GetIsolate();
-	Local<Context> context = isolate->GetCurrentContext();
-	HandleScope scope(isolate);
-
-	JNIEnv *env = titanium::JNIScope::getEnv();
-	if (!env) {
-		titanium::JSException::GetJNIEnvironmentError(isolate);
-		return;
-	}
-	static jmethodID methodID = NULL;
-	if (!methodID) {
-		methodID = env->GetMethodID(AudioselectorModule::javaClass, "getRingerMode", "()I");
-		if (!methodID) {
-			const char *error = "Couldn't find proxy method 'getRingerMode' with signature '()I'";
-			LOGE(TAG, error);
-				titanium::JSException::Error(isolate, error);
-				return;
-		}
-	}
-
-	Local<Object> holder = args.Holder();
-	if (!JavaObject::isJavaObject(holder)) {
-		holder = holder->FindInstanceInPrototypeChain(getProxyTemplate(isolate));
-	}
-	if (holder.IsEmpty() || holder->IsNull()) {
-		LOGE(TAG, "Couldn't obtain argument holder");
-		args.GetReturnValue().Set(v8::Undefined(isolate));
-		return;
-	}
-	titanium::Proxy* proxy = NativeObject::Unwrap<titanium::Proxy>(holder);
-	if (!proxy) {
-		args.GetReturnValue().Set(Undefined(isolate));
-		return;
-	}
-
-	jvalue* jArguments = 0;
-
-
-	jobject javaProxy = proxy->getJavaObject();
-	if (javaProxy == NULL) {
-		args.GetReturnValue().Set(v8::Undefined(isolate));
-		return;
-	}
-	jint jResult = (jint)env->CallIntMethodA(javaProxy, methodID, jArguments);
+	jboolean jResult = (jboolean)env->CallBooleanMethodA(javaProxy, methodID, jArguments);
 
 
 
@@ -993,7 +626,7 @@ void AudioselectorModule::getRingerMode(const FunctionCallbackInfo<Value>& args)
 	}
 
 
-	Local<Number> v8Result = titanium::TypeConverter::javaIntToJsNumber(isolate, env, jResult);
+	Local<Boolean> v8Result = titanium::TypeConverter::javaBooleanToJsBoolean(isolate, env, jResult);
 
 
 
@@ -1136,6 +769,74 @@ void AudioselectorModule::isBluetoothA2dpOn(const FunctionCallbackInfo<Value>& a
 	args.GetReturnValue().Set(v8Result);
 
 }
+void AudioselectorModule::isSpeakerphoneOn(const FunctionCallbackInfo<Value>& args)
+{
+	LOGD(TAG, "isSpeakerphoneOn()");
+	Isolate* isolate = args.GetIsolate();
+	Local<Context> context = isolate->GetCurrentContext();
+	HandleScope scope(isolate);
+
+	JNIEnv *env = titanium::JNIScope::getEnv();
+	if (!env) {
+		titanium::JSException::GetJNIEnvironmentError(isolate);
+		return;
+	}
+	static jmethodID methodID = NULL;
+	if (!methodID) {
+		methodID = env->GetMethodID(AudioselectorModule::javaClass, "isSpeakerphoneOn", "()Z");
+		if (!methodID) {
+			const char *error = "Couldn't find proxy method 'isSpeakerphoneOn' with signature '()Z'";
+			LOGE(TAG, error);
+				titanium::JSException::Error(isolate, error);
+				return;
+		}
+	}
+
+	Local<Object> holder = args.Holder();
+	if (!JavaObject::isJavaObject(holder)) {
+		holder = holder->FindInstanceInPrototypeChain(getProxyTemplate(isolate));
+	}
+	if (holder.IsEmpty() || holder->IsNull()) {
+		LOGE(TAG, "Couldn't obtain argument holder");
+		args.GetReturnValue().Set(v8::Undefined(isolate));
+		return;
+	}
+	titanium::Proxy* proxy = NativeObject::Unwrap<titanium::Proxy>(holder);
+	if (!proxy) {
+		args.GetReturnValue().Set(Undefined(isolate));
+		return;
+	}
+
+	jvalue* jArguments = 0;
+
+
+	jobject javaProxy = proxy->getJavaObject();
+	if (javaProxy == NULL) {
+		args.GetReturnValue().Set(v8::Undefined(isolate));
+		return;
+	}
+	jboolean jResult = (jboolean)env->CallBooleanMethodA(javaProxy, methodID, jArguments);
+
+
+
+	proxy->unreferenceJavaObject(javaProxy);
+
+
+
+	if (env->ExceptionCheck()) {
+		Local<Value> jsException = titanium::JSException::fromJavaException(isolate);
+		env->ExceptionClear();
+		return;
+	}
+
+
+	Local<Boolean> v8Result = titanium::TypeConverter::javaBooleanToJsBoolean(isolate, env, jResult);
+
+
+
+	args.GetReturnValue().Set(v8Result);
+
+}
 void AudioselectorModule::isBluetoothScoOn(const FunctionCallbackInfo<Value>& args)
 {
 	LOGD(TAG, "isBluetoothScoOn()");
@@ -1204,9 +905,9 @@ void AudioselectorModule::isBluetoothScoOn(const FunctionCallbackInfo<Value>& ar
 	args.GetReturnValue().Set(v8Result);
 
 }
-void AudioselectorModule::isTypeOn(const FunctionCallbackInfo<Value>& args)
+void AudioselectorModule::isWiredHeadsetOn(const FunctionCallbackInfo<Value>& args)
 {
-	LOGD(TAG, "isTypeOn()");
+	LOGD(TAG, "isWiredHeadsetOn()");
 	Isolate* isolate = args.GetIsolate();
 	Local<Context> context = isolate->GetCurrentContext();
 	HandleScope scope(isolate);
@@ -1218,9 +919,9 @@ void AudioselectorModule::isTypeOn(const FunctionCallbackInfo<Value>& args)
 	}
 	static jmethodID methodID = NULL;
 	if (!methodID) {
-		methodID = env->GetMethodID(AudioselectorModule::javaClass, "isTypeOn", "(I)Z");
+		methodID = env->GetMethodID(AudioselectorModule::javaClass, "isWiredHeadsetOn", "()Z");
 		if (!methodID) {
-			const char *error = "Couldn't find proxy method 'isTypeOn' with signature '(I)Z'";
+			const char *error = "Couldn't find proxy method 'isWiredHeadsetOn' with signature '()Z'";
 			LOGE(TAG, error);
 				titanium::JSException::Error(isolate, error);
 				return;
@@ -1242,40 +943,7 @@ void AudioselectorModule::isTypeOn(const FunctionCallbackInfo<Value>& args)
 		return;
 	}
 
-	if (args.Length() < 1) {
-		char errorStringBuffer[100];
-		sprintf(errorStringBuffer, "isTypeOn: Invalid number of arguments. Expected 1 but got %d", args.Length());
-		titanium::JSException::Error(isolate, errorStringBuffer);
-		return;
-	}
-
-	jvalue jArguments[1];
-
-
-
-
-	
-		if ((titanium::V8Util::isNaN(isolate, args[0]) && !args[0]->IsUndefined()) || args[0]->ToString(context).FromMaybe(String::Empty(isolate))->Length() == 0) {
-			const char *error = "Invalid value, expected type Number.";
-			LOGE(TAG, error);
-			titanium::JSException::Error(isolate, error);
-			return;
-		}
-		if (!args[0]->IsNull()) {
-		MaybeLocal<Number> arg_0 = args[0]->ToNumber(context);
-		if (arg_0.IsEmpty()) {
-			const char *error = "Invalid argument at index 0, expected type Number and failed to coerce.";
-			LOGE(TAG, error);
-			titanium::JSException::Error(isolate, error);
-			return;
-		} else {
-			jArguments[0].i =
-				titanium::TypeConverter::jsNumberToJavaInt(
-					env, arg_0.ToLocalChecked());
-		}
-	} else {
-		jArguments[0].i = NULL;
-	}
+	jvalue* jArguments = 0;
 
 
 	jobject javaProxy = proxy->getJavaObject();

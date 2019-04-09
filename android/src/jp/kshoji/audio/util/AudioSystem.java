@@ -4,10 +4,13 @@ import android.os.Build;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import de.appwerft.audioselector.AudioselectorModule;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Method;
+
+import org.appcelerator.kroll.common.Log;
 
 /**
  *{@link android.media.AudioSystem} (hidden API) wrapper.
@@ -53,7 +56,7 @@ public final class AudioSystem {
     public static final int DEVICE_OUT_USB_ACCESSORY = 0x2000;
     public static final int DEVICE_OUT_USB_DEVICE = 0x4000;
     public static final int DEVICE_OUT_REMOTE_SUBMIX = 0x8000;
-
+    public static final String LCAT = "🎧Audiosystem";
     // device categories config for setForceUse, must match AudioSystem::forced_config
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({
@@ -96,10 +99,10 @@ public final class AudioSystem {
         if (audioSystem == null) {
             try {
                 audioSystem = Class.forName("android.media.AudioSystem");
-            } catch (ClassNotFoundException ignored) {
+			} catch (ClassNotFoundException ignored) {
+				Log.e(LCAT, ignored.getLocalizedMessage());
             }
         }
-
         return audioSystem;
     }
 
@@ -131,6 +134,7 @@ public final class AudioSystem {
                 Method method = audioSystem.getMethod("setDeviceConnectionState", Integer.TYPE, Integer.TYPE, String.class);
                 method.invoke(null, device, state, deviceAddress);
             } catch (Exception ignored) {
+            	Log.e(LCAT, ignored.getLocalizedMessage());
             }
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             // Android version >= 6
@@ -138,6 +142,7 @@ public final class AudioSystem {
                 Method method = audioSystem.getMethod("setDeviceConnectionState", Integer.TYPE, Integer.TYPE, String.class, String.class);
                 method.invoke(null, device, state, deviceAddress, deviceName);
             } catch (Exception ignored) {
+            	Log.e(LCAT, ignored.getLocalizedMessage());
             }
         }
     }
@@ -149,12 +154,13 @@ public final class AudioSystem {
      * @param config device categories config
      */
     public static void setForceUse(@Usage int usage, @CategoryConfig int config) {
+    	Log.d(LCAT,"setForceUse");
         Class<?> audioSystem = getAudioSystem();
-
         try {
             Method method = audioSystem.getMethod("setForceUse", Integer.TYPE, Integer.TYPE);
             method.invoke(null, usage, config);
         } catch (Exception ignored) {
+        		Log.e(LCAT, ignored.getLocalizedMessage());
         }
     }
 
@@ -195,6 +201,7 @@ public final class AudioSystem {
                     return FORCE_NO_BT_A2DP;
             }
         } catch (Exception ignored) {
+        	Log.e(LCAT, ignored.getLocalizedMessage());
         }
 
         return FORCE_NONE;

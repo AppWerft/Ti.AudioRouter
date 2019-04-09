@@ -31,20 +31,16 @@ private:
 	static v8::Persistent<v8::FunctionTemplate> proxyTemplate;
 
 	// Methods -----------------------------------------------------------
+	static void setRoute(const v8::FunctionCallbackInfo<v8::Value>&);
 	static void getDevices(const v8::FunctionCallbackInfo<v8::Value>&);
 	static void getActiveAudioDevice(const v8::FunctionCallbackInfo<v8::Value>&);
-	static void setTypeOn(const v8::FunctionCallbackInfo<v8::Value>&);
 	static void setActiveAudioDevice(const v8::FunctionCallbackInfo<v8::Value>&);
-	static void getAudioRoute(const v8::FunctionCallbackInfo<v8::Value>&);
-	static void isSpeakerphoneOn(const v8::FunctionCallbackInfo<v8::Value>&);
-	static void isWiredHeadsetOn(const v8::FunctionCallbackInfo<v8::Value>&);
-	static void setRingerMode(const v8::FunctionCallbackInfo<v8::Value>&);
-	static void enable(const v8::FunctionCallbackInfo<v8::Value>&);
-	static void getRingerMode(const v8::FunctionCallbackInfo<v8::Value>&);
+	static void isRoute(const v8::FunctionCallbackInfo<v8::Value>&);
 	static void isMusicActive(const v8::FunctionCallbackInfo<v8::Value>&);
 	static void isBluetoothA2dpOn(const v8::FunctionCallbackInfo<v8::Value>&);
+	static void isSpeakerphoneOn(const v8::FunctionCallbackInfo<v8::Value>&);
 	static void isBluetoothScoOn(const v8::FunctionCallbackInfo<v8::Value>&);
-	static void isTypeOn(const v8::FunctionCallbackInfo<v8::Value>&);
+	static void isWiredHeadsetOn(const v8::FunctionCallbackInfo<v8::Value>&);
 
 	// Dynamic property accessors ----------------------------------------
 
